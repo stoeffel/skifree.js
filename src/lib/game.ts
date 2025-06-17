@@ -16,7 +16,6 @@ export function Game (mainCanvas: HTMLCanvasElement, skier: Skier) {
   let paused = false
   let runningTime = 0
   let zoom = config.zoom.max
-  let time = 0
 
   this.addObject = (sprite: Sprite) => {
     sprites.push(sprite)
@@ -48,8 +47,6 @@ export function Game (mainCanvas: HTMLCanvasElement, skier: Skier) {
 
   this.cycle = (dt: number) => {
     if (!paused) {
-      time += dt
-
       this.addObjects(createObjects(sprites, dt, skier, this.canAddObject))
 
       const canSpawnBoarder = skier.downhillMetersTravelled() > config.snowboarder.spawnAfterMetersTravelled
@@ -73,13 +70,13 @@ export function Game (mainCanvas: HTMLCanvasElement, skier: Skier) {
         randomlySpawnNPC(skier, this.spawnMonster, config.dropRate.npc.monster)
       }
 
-      skier.cycle(time, dt)
+      skier.cycle(runningTime, dt)
 
       sprites.forEach((sprite: Sprite, i: number) => {
         if (sprite.canBeDeleted(skier.pos)) {
           delete sprites[i]
         } else {
-          sprite.cycle(time, dt)
+          sprite.cycle(runningTime, dt)
         }
       })
     }
@@ -89,11 +86,11 @@ export function Game (mainCanvas: HTMLCanvasElement, skier: Skier) {
       if (skier.hits({ sprite, forPlacement: false })) {
         const n = sprite.data.name
         if (n === 'smallTree' || n === 'tallTree' || n === 'rock' || n === 'snowboarder') {
-          skier.hitObstacle(time, sprite)
+          skier.hitObstacle(runningTime, sprite)
         } else if (n === 'monster') {
-          monsterEatsSkier(time, sprite as Monster, skier)
+          monsterEatsSkier(runningTime, sprite as Monster, skier)
         } else if (n === 'jump') {
-          skier.hitJump(time, sprite)
+          skier.hitJump(runningTime, sprite)
         }
       }
     })
@@ -122,7 +119,7 @@ export function Game (mainCanvas: HTMLCanvasElement, skier: Skier) {
   }
 
   this.spawnMonster = () => {
-    const monster = new Monster(time, spriteInfo.monster, skier)
+    const monster = new Monster(runningTime, spriteInfo.monster, skier)
     monster.pos = {
       x: skier.pos.x,
       y: Canvas.canvasPositionToMapPosition(skier.pos, { x: 0, y: -monster.height }).y
@@ -138,7 +135,7 @@ export function Game (mainCanvas: HTMLCanvasElement, skier: Skier) {
     const allSprites = sprites.slice() // Clone
     allSprites.push(skier)
     allSprites.sort(sortFromBackToFront)
-    allSprites.forEach((object: Sprite) => object.draw(time, skier.pos, 'main', zoom))
+    allSprites.forEach((object: Sprite) => object.draw(runningTime, skier.pos, 'main', zoom))
 
     if (config.debug) {
       this.drawDebug(allSprites)
